@@ -1,32 +1,39 @@
 import json
 import datetime
 import serial
-import os
-import time as t
+import sys
 
 from domain.message import Message
-from configuration.awsconfiguration import AwsConfig
+from configuration.awsconfiguration import AwsConfig as configClient
 
-print("Collecting data from device...")
+aws_client = configClient.client('secretsmanager', 'sa-east-1')
+endpoint = configClient.get_secret_endpoint()
 
-aws_client = AwsConfig.client('secretsmanager', 'sa-east-1')
-endpoint = AwsConfig.get_secret_endpoint()
-iot = AwsConfig("arduino", endpoint, "../.files/certificates/AmazonRootCA1.pem",
-                "../.files/certificates/private.pem.key",
-                "../.files/certificates/certificate.pem.crt")
+iot = configClient("arduino", endpoint, "../.files/certificates/AmazonRootCA1.pem",
+                   "../.files/certificates/private.pem.key",
+                   "../.files/certificates/certificate.pem.crt")
 
 connection = iot.iot_client()
 connection.connect()
 
-for i in range(10):
-    connection.publish("test/testing", i+1, 1)
-    print("Published")
-    t.sleep(0.1)
 
-print("Sending to IoT core")
-
-connection.disconnect()
+def publish(message):
+    connection.publish("iot/soilDevice/1", json.dumps(message), 1)
+    print("Message was sent to AWS")
 
 
+print("Collecting data from device...")
+while True:
+    try:
+        arduino = serial.Serial('/dev/cu.usbserial-1420', baudrate=9600, timeout=None)
+        record = arduino.readline()
+        formatted_line = record.decode('UTF-8')
+        print("Record:", formatted_line)
 
+        data_message = Message("soil_device_1", "Mini Roseira", datetime.datetime.now().isoformat(), formatted_line)
 
+        publish(data_message)
+
+    except RuntimeError:
+        connection.disconnect()
+        print("An error occurred:", sys.exc_info()[0])
