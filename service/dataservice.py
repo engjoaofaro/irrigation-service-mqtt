@@ -30,7 +30,7 @@ while True:
         formatted_line = record.decode('UTF-8')
         print("Record:", formatted_line)
 
-        data_message = Message("soil_device_1", "Mini Roseira", datetime.datetime.now().isoformat(), formatted_line)
+        data_message = Message("soilDevice1", "Mini Roseira", datetime.datetime.now().isoformat(), formatted_line)
 
         publish(data_message)
 
