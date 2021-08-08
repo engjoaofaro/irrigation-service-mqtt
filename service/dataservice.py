@@ -18,7 +18,7 @@ connection.connect()
 
 
 def publish(message):
-    connection.publish("iot/soilDevice/1", json.dumps(message), 1)
+    connection.publish("iot/soilDevice/1", json.dumps(message.__dict__), 1)
     print("Message was sent to AWS")
 
 
